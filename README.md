@@ -1,4 +1,4 @@
-# React Autocomplete [![Travis build status](https://travis-ci.org/reactjs/react-autocomplete.svg?branch=master)](https://travis-ci.org/reactjs/react-autocomplete/)
+# React Autocomplete
 
 Accessible, extensible, Autocomplete for React.js.
 
