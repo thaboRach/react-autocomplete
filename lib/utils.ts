@@ -1,16 +1,18 @@
-export function matchStateToTerm(state, value) {
+import { CategorizedUSState, USState } from './types/USState';
+
+export function matchStateToTerm(state: USState, value: string) {
   return (
     state.name.toLowerCase().indexOf(value.toLowerCase()) !== -1 ||
     state.abbr.toLowerCase().indexOf(value.toLowerCase()) !== -1
-  )
+  );
 }
 
-export function matchStateToTermWithHeaders(state, value) {
+export function matchStateToTermWithHeaders(state: USState, value: string) {
   return (
     state.header ||
     state.name.toLowerCase().indexOf(value.toLowerCase()) !== -1 ||
     state.abbr.toLowerCase().indexOf(value.toLowerCase()) !== -1
-  )
+  );
 }
 
 /**
@@ -21,34 +23,52 @@ export function matchStateToTermWithHeaders(state, value) {
  * location (or there is no match) will be sorted alphabetically - For example,
  * a search for "or" would return "North Carolina" above "North Dakota".
  */
-export function sortStates(a, b, value) {
-  const aLower = a.name.toLowerCase()
-  const bLower = b.name.toLowerCase()
-  const valueLower = value.toLowerCase()
-  const queryPosA = aLower.indexOf(valueLower)
-  const queryPosB = bLower.indexOf(valueLower)
+export function sortStates(a: USState, b: USState, value: string) {
+  const aLower = a.name.toLowerCase();
+  const bLower = b.name.toLowerCase();
+  const valueLower = value.toLowerCase();
+  const queryPosA = aLower.indexOf(valueLower);
+  const queryPosB = bLower.indexOf(valueLower);
   if (queryPosA !== queryPosB) {
-    return queryPosA - queryPosB
+    return queryPosA - queryPosB;
   }
-  return aLower < bLower ? -1 : 1
+  return aLower < bLower ? -1 : 1;
 }
 
-export function fakeRequest(value, cb) {
-  return setTimeout(cb, 500, value ?
-    getStates().filter(state => matchStateToTerm(state, value)) :
-    getStates()
-  )
+export function fakeRequest(value: string, cb: () => void) {
+  return setTimeout(
+    cb,
+    500,
+    value ? getStates().filter((state) => matchStateToTerm(state, value)) : getStates(),
+  );
 }
 
-
-export function fakeCategorizedRequest(value, cb) {
-  setTimeout(cb, 500, value ?
-    getCategorizedStates().filter(state => matchStateToTermWithHeaders(state, value)) :
-    getCategorizedStates()
-  )
+export function fakeCategorizedRequest(value: string, cb: () => void) {
+  setTimeout(
+    cb,
+    500,
+    value
+      ? getCategorizedStates().filter((state) =>
+          matchStateToTermWithHeaders(state as USState, value),
+        )
+      : getCategorizedStates(),
+  );
 }
 
-export function getStates() {
+export function getScrollOffset() {
+  return {
+    x:
+      window.scrollX !== undefined
+        ? window.scrollX
+        : (document.documentElement || document.body.parentNode || document.body).scrollLeft,
+    y:
+      window.scrollY !== undefined
+        ? window.scrollY
+        : (document.documentElement || document.body.parentNode || document.body).scrollTop,
+  };
+}
+
+export function getStates(): USState[] {
   return [
     { abbr: 'AL', name: 'Alabama' },
     { abbr: 'AK', name: 'Alaska' },
@@ -99,11 +119,11 @@ export function getStates() {
     { abbr: 'WA', name: 'Washington' },
     { abbr: 'WV', name: 'West Virginia' },
     { abbr: 'WI', name: 'Wisconsin' },
-    { abbr: 'WY', name: 'Wyoming' }
-  ]
+    { abbr: 'WY', name: 'Wyoming' },
+  ];
 }
 
-export function getCategorizedStates() {
+export function getCategorizedStates(): CategorizedUSState[] {
   return [
     { header: 'West' },
     { abbr: 'AZ', name: 'Arizona' },
@@ -157,10 +177,8 @@ export function getCategorizedStates() {
     { abbr: 'PA', name: 'Pennsylvania' },
     { abbr: 'RI', name: 'Rhode Island' },
     { abbr: 'VT', name: 'Vermont' },
-    { header:'Pacific' },
+    { header: 'Pacific' },
     { abbr: 'AK', name: 'Alaska' },
     { abbr: 'HI', name: 'Hawaii' },
-  ]
+  ];
 }
-
-
