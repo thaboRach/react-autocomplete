@@ -1,8 +1,6 @@
 import React from 'react';
-import { findDOMNode } from 'react-dom';
-import { Option } from '../types/Option';
 import { getScrollOffset } from '../utils';
-const scrollIntoView = require('dom-scroll-into-view');
+import scrollIntoView from 'dom-scroll-into-view';
 
 const IMPERATIVE_API = [
   'blur',
@@ -17,27 +15,27 @@ const IMPERATIVE_API = [
 
 type ImperativeAPI = (typeof IMPERATIVE_API)[number];
 
-type Props = {
-  items: Option[]; // TODO:Change to generic?
+export type AutocompleteProps<T> = {
+  items: T[];
   value?: any; // TODO:Change to generic
   onChange?: (event: React.ChangeEvent, value: string) => void;
-  onSelect?: (value: string, item: any) => void;
-  shouldItemRender?: (item: any, value: string) => boolean;
-  isItemSelectable?: (item: any) => boolean;
+  onSelect?: (value: string, item?: T) => void;
+  shouldItemRender?: (item: T, value: string) => boolean;
+  isItemSelectable?: (item: T) => boolean;
   sortItems?: (itemA: any, itemB: any, value: string) => number;
-  getItemValue: (item: any) => string;
+  getItemValue: (item: T) => string;
   renderItem: (
     item: any,
     isHighlighted: boolean,
     styles?: React.CSSProperties,
   ) => React.ReactElement;
   renderMenu?: (
-    items: any[],
+    items: React.ReactNode[],
     value: string,
     styles: { top?: number; left?: number; minWidth?: number },
   ) => React.ReactElement;
   menuStyle?: React.CSSProperties;
-  renderInput: (
+  renderInput?: (
     props: React.InputHTMLAttributes<HTMLInputElement> & {
       ref: (refElement: React.RefObject<HTMLInputElement>) => void;
     },
@@ -45,6 +43,7 @@ type Props = {
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   wrapperProps?: React.InputHTMLAttributes<HTMLDivElement>;
   wrapperStyle?: React.CSSProperties;
+  wrapperClassName?: string;
   autoHighlight?: boolean;
   selectOnBlur?: boolean;
   onMenuVisibilityChange?: (isOpen: boolean) => void;
@@ -52,7 +51,7 @@ type Props = {
   debug?: boolean;
 };
 
-function Autocomplete(props: Props) {
+export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX.Element {
   const {
     value = '',
     items = [],
@@ -63,6 +62,7 @@ function Autocomplete(props: Props) {
     wrapperStyle = {
       display: 'inline-block',
     },
+    wrapperClassName = '',
     inputProps = {},
     renderInput = (args) => {
       // @ts-ignore
@@ -94,7 +94,9 @@ function Autocomplete(props: Props) {
     },
   } = props;
 
-  let inputRef = React.useRef<{ [key: string]: React.RefObject<HTMLElement> }>({});
+  let inputRef = React.useRef<{ [key: string]: React.RefObject<HTMLElement | HTMLInputElement> }>(
+    {},
+  );
   const apiRefs = React.useRef<{ [key in ImperativeAPI]?: (...args: any[]) => void }>({});
 
   const ignoreBlur = React.useRef<boolean>(false);
@@ -118,8 +120,8 @@ function Autocomplete(props: Props) {
   const [menuWidth, setMenuWidth] = React.useState<number>();
 
   const [itemValue, setItemValue] = React.useState<any>();
-  const [valueState, setValueState] = React.useState<any>();
-  const [itemState, setItemState] = React.useState<Option>();
+  const [valueState, setValueState] = React.useState<any>(value);
+  const [itemState, setItemState] = React.useState<T>();
 
   const keyDownHandlers: {
     [key: string]: (event: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -163,6 +165,7 @@ function Autocomplete(props: Props) {
     Enter(event: React.KeyboardEvent<HTMLInputElement>) {
       // Key code 229 is used for selecting items from character selectors (Pinyin, Kana, etc)
       if (event.key !== 'Enter') return;
+
       // In case the user is currently hovering over the menu
       setIgnoreBlur(false);
       if (!checkIsOpen()) {
@@ -176,6 +179,7 @@ function Autocomplete(props: Props) {
         // text entered + menu item has been highlighted + enter is hit -> update value to that of selected menu item, close the menu
         event.preventDefault();
         const item = getFilteredItems()[highlightedIndex];
+
         setItemState(item);
         setItemValue(getItemValue(item));
 
@@ -198,8 +202,14 @@ function Autocomplete(props: Props) {
   };
 
   React.useEffect(() => {
-    onSelect(valueState, itemState);
-    // this.inputRef.input.setSelectionRange(value.length, value.length);
+    onSelect(itemValue, itemState);
+    if (
+      inputRef?.current &&
+      inputRef.current.input?.current &&
+      inputRef.current.input?.current instanceof HTMLInputElement
+    ) {
+      inputRef.current.input.current.setSelectionRange(value.length, value.length);
+    }
   }, [itemState, valueState, itemValue]);
 
   React.useEffect(() => {
@@ -237,7 +247,7 @@ function Autocomplete(props: Props) {
     if (checkIsOpen() && highlightedIndex !== null) {
       const itemNode = inputRef.current[`item-${highlightedIndex}`];
       const menuNode = inputRef.current.menu;
-      scrollIntoView(findDOMNode(itemNode.current), findDOMNode(menuNode.current), {
+      scrollIntoView(itemNode, menuNode, {
         onlyScrollIfNeeded: true,
       });
     }
@@ -482,7 +492,7 @@ function Autocomplete(props: Props) {
     const open = checkIsOpen();
 
     return (
-      <div style={{ ...wrapperStyle }} {...wrapperProps}>
+      <div className={wrapperClassName} style={{ ...wrapperStyle }} {...wrapperProps}>
         {renderInput({
           ...inputProps,
           role: 'combobox',
@@ -514,7 +524,5 @@ function Autocomplete(props: Props) {
     );
   }
 
-  return render;
+  return render();
 }
-
-export default Autocomplete;
