@@ -73,8 +73,8 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     isItemSelectable = () => {
       return true;
     },
-    renderMenu = (items, value, style) => {
-      return <div style={{ ...style, ...menuStyle }} children={items} />;
+    renderMenu = (items, _value, style) => {
+      return <div style={{ ...style, ...menuStyle }}>{items}</div>;
     },
     menuStyle = {
       borderRadius: '3px',

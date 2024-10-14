@@ -56,7 +56,7 @@ export const Basic: Story = {
             wrapperClassName='ra-border ra-border-solid ra-border-black'
             shouldItemRender={matchStateToTerm}
             sortItems={sortStates}
-            onChange={(event, value) => setUSState(value)}
+            onChange={(_event, value) => setUSState(value)}
             onSelect={(value) => setUSState(value)}
             renderMenu={(children) => (
               <div className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
@@ -111,7 +111,7 @@ export const ManagedMenuVisibility: Story = {
             value={value}
             shouldItemRender={matchStateToTerm}
             onSelect={(value) => setValue(value)}
-            onChange={(event, value) => {
+            onChange={(_event, value) => {
               setValue(value);
             }}
             renderMenu={(children) => (
@@ -190,7 +190,7 @@ export const CustomMenu: Story = {
               if (state) setUnitedSates([state]);
             }}
             wrapperClassName='ra-border ra-border-solid ra-border-black ra-max-w-[12rem] ra-w-full'
-            onChange={(event, value) => {
+            onChange={(_event, value) => {
               setValue(value);
               setLoading(true);
               setUnitedSates([]);
@@ -273,7 +273,7 @@ export const AsyncData: Story = {
               // or you could reset it to a default list again
               // this.setState({ unitedStates: getStates() })
             }}
-            onChange={(event, value) => {
+            onChange={(_event, value) => {
               setValue(value);
               if (requestTimer?.current) clearTimeout(requestTimer.current);
               requestTimer.current = fakeRequest<USState[]>(value, (items) => {
