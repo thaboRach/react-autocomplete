@@ -17,7 +17,7 @@ type ImperativeAPI = (typeof IMPERATIVE_API)[number];
 
 export type AutocompleteProps<T> = {
   items: T[];
-  value?: any; // TODO:Change to generic
+  value?: string; // TODO:Change to generic
   onChange?: (event: React.ChangeEvent, value: string) => void;
   onSelect?: (value: string, item?: T) => void;
   shouldItemRender?: (item: T, value: string) => boolean;
@@ -269,7 +269,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
   }
 
   function maybeAutoCompleteText(prevState: number | null): number | null {
-    const { value, getItemValue } = props;
+    const { getItemValue } = props;
     let index: number = prevState === null ? 0 : prevState;
     let items = getFilteredItems();
 
@@ -338,12 +338,12 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
 
     if (props?.shouldItemRender) {
       filteredItems = items.filter(
-        (item) => props?.shouldItemRender && props.shouldItemRender(item, props.value),
+        (item) => props?.shouldItemRender && props.shouldItemRender(item, value),
       );
     }
 
     if (props.sortItems) {
-      filteredItems.sort((a, b) => (props.sortItems && props.sortItems(a, b, props.value)) ?? 0);
+      filteredItems.sort((a, b) => (props.sortItems && props.sortItems(a, b, value)) ?? 0);
     }
 
     return filteredItems;
@@ -388,7 +388,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
       top: menuTop,
       minWidth: menuWidth,
     };
-    const menu = renderMenu(items, props.value, style);
+    const menu = renderMenu(items, value, style);
     if (!menu) return;
     return React.cloneElement(menu, {
       ref: (e: React.RefObject<HTMLElement>) => (inputRef.current.menu = e),
