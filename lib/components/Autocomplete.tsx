@@ -353,9 +353,9 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     setHighlightedIndex(index);
   }
 
-  function selectItemFromMouse(item: any) {
+  function selectItemFromMouse(item: T) {
     const value = getItemValue(item);
-    setValueState(value);
+    setItemValue(value);
     setItemState(item);
     // The menu will de-render before a mouseLeave event
     // happens. Clear the flag to release control over focus
@@ -375,10 +375,8 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
       });
 
       return React.cloneElement(element, {
-        onMouseEnter:
-          isItemSelectable && isItemSelectable(item) ? () => highlightItemFromMouse(index) : null,
-        onClick:
-          isItemSelectable && isItemSelectable(item) ? () => selectItemFromMouse(item) : null,
+        onMouseEnter: isItemSelectable(item) ? () => highlightItemFromMouse(index) : null,
+        onClick: isItemSelectable(item) ? () => selectItemFromMouse(item) : null,
         ref: (e: React.RefObject<HTMLElement>) => (inputRef.current[`item-${index}`] = e),
       });
     });

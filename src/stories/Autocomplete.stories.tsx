@@ -29,7 +29,123 @@ const meta: Meta<AutocompleteProps<USState>> = {
     getItemValue: {
       control: 'object',
       type: 'function',
-      description: '',
+      description: 'It is used to read the display value from each entry in items',
+    },
+    items: {
+      control: 'object',
+      description: 'A list of items to display in the dropdown menu',
+    },
+    renderItem: {
+      control: 'object',
+      type: 'function',
+      description:
+        'It is invoked for each entry in items that also passes shouldItemRender to generate the render tree for each item in the dropdown menu. \
+      Styles is an optional set of styles that can be applied to improve the look/feel of the items in the dropdown menu.',
+    },
+    autoHighlight: {
+      control: 'boolean',
+      type: 'boolean',
+      description: 'Whether or not to automatically highlight the top match in the dropdown menu.',
+    },
+    inputProps: {
+      control: 'object',
+      description:
+        'Props passed to props.renderInput. By default these props will be applied to the `<input />` element rendered by Autocomplete,\
+      unless you have specified a custom value for props.renderInput. Any properties supported by HTMLInputElement can be specified,\
+      apart from the following which are set by Autocomplete: value, autoComplete, role, aria-autocomplete.\
+      inputProps is commonly used for (but not limited to) placeholder, event handlers (onFocus, onBlur, etc.), autoFocus, etc..',
+    },
+    isItemSelectable: {
+      control: 'object',
+      type: 'function',
+      description:
+        'Invoked when attempting to select an item. The return value is used to determine whether the item should be selectable or not.\
+      By default all items are selectable.',
+    },
+    menuStyle: {
+      control: 'object',
+      description:
+        'Styles that are applied to the dropdown menu in the default renderMenu implementation.\
+      If you override renderMenu and you want to use menuStyle you must manually apply them (props.menuStyle).',
+    },
+    onChange: {
+      control: 'object',
+      type: 'function',
+      description: "It is invoked every time the user changes the input's value.",
+    },
+    onMenuVisibilityChange: {
+      control: 'object',
+      type: 'function',
+      description:
+        "It is invoked every time the dropdown menu's visibility changes (i.e. every time it is displayed/hidden).",
+    },
+    onSelect: {
+      type: 'function',
+      control: 'object',
+      description: 'It is invoked when the user selects an item from the dropdown menu.',
+    },
+    open: {
+      control: 'boolean',
+      type: 'boolean',
+      description:
+        'It is used to override the internal logic which displays/hides the dropdown menu.\
+      This is useful if you want to force a certain state based on your UX/business logic.\
+      Use it together with onMenuVisibilityChange for fine-grained control over the dropdown menu dynamics.',
+    },
+    renderInput: {
+      control: 'object',
+      type: 'function',
+      description:
+        'It is invoked to generate the input element. The props argument is the result of merging props.\
+      inputProps with a selection of props that are required both for functionality and accessibility.\
+      At the very least you need to apply props.ref and all props.on<event> event handlers.\
+      Failing to do this will cause Autocomplete to behave unexpectedly.',
+    },
+    renderMenu: {
+      control: 'object',
+      type: 'function',
+      description:
+        'It is invoked to generate the render tree for the dropdown menu.\
+      Ensure the returned tree includes every entry in items or else the highlight order and keyboard navigation logic will break.\
+      Styles will contain { top, left, minWidth } which are the coordinates of the top-left corner and the width of the dropdown menu.',
+    },
+    selectOnBlur: {
+      control: 'boolean',
+      type: 'boolean',
+      description:
+        'Whether or not to automatically select the highlighted item when the `<input/>` loses focus.',
+    },
+    shouldItemRender: {
+      control: 'object',
+      type: 'function',
+      description:
+        'It is invoked for each entry in items and its return value is used to determine whether or not it should be displayed in the dropdown menu.\
+        By default all items are always rendered.',
+    },
+    sortItems: {
+      control: 'object',
+      type: 'function',
+      description: 'The function which is used to sort items before display.',
+    },
+    value: {
+      control: 'text',
+      type: 'string',
+      description: 'The value to display in the input field',
+    },
+    wrapperProps: {
+      control: 'object',
+      description:
+        'Props that are applied to the element which wraps the `<input />` and dropdown menu elements rendered by Autocomplete.',
+    },
+    wrapperStyle: {
+      control: 'object',
+      description:
+        'This is a shorthand for `wrapperProps={{ style: <your styles> }}`. Note that wrapperStyle is applied before wrapperProps, so the latter will win if it contains a style entry.',
+    },
+    wrapperClassName: {
+      control: 'text',
+      type: 'string',
+      description: 'The custom class to use on the wrapper',
     },
   },
 };
@@ -51,6 +167,7 @@ export const Basic: Story = {
         <InputContainer>
           <Label htmlFor='states-autocomplete'>Choose a state from the US</Label>
           <Autocomplete<USState>
+            {...args}
             value={usState}
             wrapperStyle={{ position: 'relative', display: 'inline-block' }}
             wrapperClassName='ra-border ra-border-solid ra-border-black'
@@ -59,11 +176,10 @@ export const Basic: Story = {
             onChange={(_event, value) => setUSState(value)}
             onSelect={(value) => setUSState(value)}
             renderMenu={(children) => (
-              <div className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
+              <ul className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
                 {children}
-              </div>
+              </ul>
             )}
-            {...args}
           />
         </InputContainer>
       </Container>
@@ -74,13 +190,41 @@ export const Basic: Story = {
     items: getStates(),
     getItemValue: (item) => item.name,
     renderItem: (item, isHighlighted) => (
-      <div
-        className={`ra-px-1 ra-py-1 ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
+      <li
+        className={`ra-px-1 ra-py-1 hover:ra-cursor-default  ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
         key={item.abbr}
       >
         {item.name}
-      </div>
+      </li>
     ),
+    autoHighlight: true,
+    isItemSelectable: (_item) => {
+      return true;
+    },
+    menuStyle: {
+      borderRadius: '3px',
+      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+      background: 'rgba(255, 255, 255, 0.9)',
+      padding: '2px 0',
+      fontSize: '90%',
+      position: 'fixed',
+      overflow: 'auto',
+      maxHeight: '50%',
+    },
+    onChange: (_event, _value) => {},
+    onMenuVisibilityChange: (_isOpen) => {},
+    onSelect: (_value, _item) => {},
+    renderInput: (_props) => {
+      // @ts-ignore
+      return <input {..._props} />;
+    },
+    renderMenu: (_items, _value, _style) => {
+      return <div style={{ ..._style }} children={_items} />;
+    },
+    selectOnBlur: false,
+    value: '',
+    wrapperProps: {},
+    wrapperStyle: { display: 'inline-block' },
   },
 };
 
@@ -115,9 +259,9 @@ export const ManagedMenuVisibility: Story = {
               setValue(value);
             }}
             renderMenu={(children) => (
-              <div className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black ra-bg-white'>
+              <ul className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black ra-bg-white'>
                 {children}
-              </div>
+              </ul>
             )}
             wrapperStyle={{ position: 'relative', display: 'inline-block' }}
             wrapperClassName='ra-border ra-border-solid ra-border-black'
@@ -152,12 +296,12 @@ export const ManagedMenuVisibility: Story = {
     items: getStates(),
     getItemValue: (item) => item.name,
     renderItem: (item, isHighlighted) => (
-      <div
-        className={`ra-px-1 ra-py-1 ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
+      <li
+        className={`ra-px-1 ra-py-1 hover:ra-cursor-default ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
         key={item.abbr}
       >
         {item.name}
-      </div>
+      </li>
     ),
   },
 };
@@ -204,7 +348,7 @@ export const CustomMenu: Story = {
               );
             }}
             renderMenu={(items, value) => (
-              <div className='ra-absolute ra-max-w-[12rem] ra-border ra-border-solid ra-border-black ra-bg-white'>
+              <ul className='ra-absolute ra-max-w-[12rem] ra-border ra-border-solid ra-border-black ra-bg-white'>
                 {value === '' ? (
                   <div className='ra-px-1 ra-py-1'>Type of the name of a United State</div>
                 ) : loading ? (
@@ -214,7 +358,7 @@ export const CustomMenu: Story = {
                 ) : (
                   items
                 )}
-              </div>
+              </ul>
             )}
             isItemSelectable={(item) => !item.header}
             {...args}
@@ -225,7 +369,6 @@ export const CustomMenu: Story = {
   },
   args: {
     inputProps: { id: 'states-autocomplete', className: 'ra-text-black ra-pl-1 ra-w-full' },
-    // items: getStates(),
     getItemValue: (item) => item.name,
     renderItem: (item, isHighlighted) =>
       item.header ? (
@@ -233,12 +376,12 @@ export const CustomMenu: Story = {
           {item.header}
         </div>
       ) : (
-        <div
-          className={`ra-px-1 ra-py-1 ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
+        <li
+          className={`ra-px-1 ra-py-1 hover:ra-cursor-default  ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
           key={item.abbr}
         >
           {item.name}
-        </div>
+        </li>
       ),
   },
 };
@@ -281,9 +424,9 @@ export const AsyncData: Story = {
               });
             }}
             renderMenu={(children) => (
-              <div className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
+              <ul className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
                 {children}
-              </div>
+              </ul>
             )}
             {...args}
           />
@@ -295,12 +438,12 @@ export const AsyncData: Story = {
     inputProps: { id: 'states-autocomplete', className: 'ra-text-black ra-pl-1' },
     getItemValue: (item) => item.name,
     renderItem: (item, isHighlighted) => (
-      <div
-        className={`ra-px-1 ra-py-1 ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
+      <li
+        className={`ra-px-1 ra-py-1  hover:ra-cursor-default  ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
         key={item.abbr}
       >
         {item.name}
-      </div>
+      </li>
     ),
   },
 };
