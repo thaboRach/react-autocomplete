@@ -1,3 +1,11 @@
+# Contributing to React Autocomplete
+
+This document contains information that will hopefully allow you to get started with development of the project.
+
+## Development
+
+You can start a local development environment with `yarn storybook`.
+
 ### Commit Subjects
 
 If your patch **changes the API or fixes a bug** please use one of the
