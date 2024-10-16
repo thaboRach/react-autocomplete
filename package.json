@@ -2,18 +2,20 @@
   "name": "@thaborach/react-autocomplete",
   "version": "0.0.1",
   "description": "Accessible, extensible, Autocomplete for React.js",
-  "main": "./build/lib/Autocomplete.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
   "files": [
     "dist"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/reactjs/react-autocomplete.git"
+    "url": "git+https://github.com/thaboRach/react-autocomplete.git"
   },
   "author": "Thabo Rachidi",
   "license": "MIT",
-  "homepage": "https://github.com/reactjs/react-autocomplete",
-  "bugs": "https://github.com/reactjs/react-autocomplete/issues",
+  "homepage": "https://github.com/thaboRach/react-autocomplete#readme",
+  "bugs": "https://github.com/thaboRach/react-autocomplete/issues",
   "keywords": [
     "input",
     "autocomplete",
@@ -59,6 +61,7 @@
     "@typescript-eslint/parser": "^8.8.0",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
+    "dom-scroll-into-view": "^2.0.1",
     "eslint": "^9.10.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
@@ -83,10 +86,8 @@
     "vite-plugin-dts": "^4.2.3",
     "vitest": "^2.1.1"
   },
-  "dependencies": {
-    "dom-scroll-into-view": "^2.0.1"
-  },
   "peerDependencies": {
+    "dom-scroll-into-view": "^2.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }
