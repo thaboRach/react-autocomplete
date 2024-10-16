@@ -1,6 +1,6 @@
 {
   "name": "@thaborach/react-autocomplete",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Accessible, extensible, Autocomplete for React.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
