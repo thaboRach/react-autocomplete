@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/thaboRach/react-autocomplete/compare/v1.0.0...v1.1.0) (2025-09-23)
+
+
+### Features
+
+* restructure and cleanup code ([8cd9ffa](https://github.com/thaboRach/react-autocomplete/commit/8cd9ffa911a366e7685fcb4279d9432312113f6c))
+* restructure and cleanup code ([1fc70a6](https://github.com/thaboRach/react-autocomplete/commit/1fc70a6d6c556bd92c6ae99bc906bfce9b3334c1))
+
 ## 1.0.0 (2024-10-16)
 
 
