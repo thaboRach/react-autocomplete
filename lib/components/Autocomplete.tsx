@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useImperativeHandle, useCallback } from 'react';
-import scrollIntoView from 'dom-scroll-into-view';
-import { getScrollOffset } from '@lib/utils';
+import { getScrollOffset, scrollIntoViewIfNeeded } from '@lib/utils';
 import { ImperativeAPIRef, InputReference } from '@lib/types';
 
 export type AutocompleteProps<T> = {
@@ -268,9 +267,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     if (checkIsOpen() && highlightedIndex !== null) {
       const itemNode = inputRef.current[`item-${highlightedIndex}`];
       const menuNode = inputRef.current.menu;
-      scrollIntoView(itemNode, menuNode, {
-        onlyScrollIfNeeded: true,
-      });
+      scrollIntoViewIfNeeded(itemNode.current, menuNode.current);
     }
 
     if (isOpen && prevIsOpen.current !== isOpen) {

@@ -8,7 +8,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), dts({ include: ['lib'], exclude: ['src'] }), tsconfigPaths()],
+  plugins: [react(), dts({ include: ['lib'], exclude: ['src', 'lib/tests/**'] }), tsconfigPaths()],
   server: {
     open: true,
   },
@@ -26,6 +26,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'happy-dom',
+    setupFiles: 'lib/tests/setup.ts',
+    environment: 'jsdom',
   },
 });
