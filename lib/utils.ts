@@ -11,6 +11,21 @@ export function getScrollOffset() {
   };
 }
 
+export function scrollIntoViewIfNeeded(itemNode: HTMLElement | null, menuNode: HTMLElement | null) {
+  const itemRect = itemNode?.getBoundingClientRect();
+  const menuRect = menuNode?.getBoundingClientRect();
+
+  if (!itemRect || !menuRect || !menuNode) {
+    return;
+  }
+
+  if (itemRect?.top < menuRect.top) {
+    menuNode.scrollTop -= menuRect.top - itemRect.top;
+  } else if (itemRect.bottom > menuRect.bottom) {
+    menuNode.scrollTop += itemRect.bottom - menuRect.bottom;
+  }
+}
+
 export function matchStateToTerm(state: USState, value: string) {
   return (
     state.name.toLowerCase().indexOf(value.toLowerCase()) !== -1 ||
