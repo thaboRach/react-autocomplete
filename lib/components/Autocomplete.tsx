@@ -1,23 +1,11 @@
-import React from 'react';
-import { getScrollOffset } from '../utils';
+import React, { useEffect, useState, useRef, useImperativeHandle, useCallback } from 'react';
 import scrollIntoView from 'dom-scroll-into-view';
-
-const IMPERATIVE_API = [
-  'blur',
-  'checkValidity',
-  'click',
-  'focus',
-  'select',
-  'setCustomValidity',
-  'setSelectionRange',
-  'setRangeText',
-] as const;
-
-type ImperativeAPI = (typeof IMPERATIVE_API)[number];
+import { getScrollOffset } from '@lib/utils';
+import { ImperativeAPIRef, InputReference } from '@lib/types';
 
 export type AutocompleteProps<T> = {
   items: T[];
-  value?: string; // TODO:Change to generic
+  value?: string;
   onChange?: (event: React.ChangeEvent, value: string) => void;
   onSelect?: (value: string, item?: T) => void;
   shouldItemRender?: (item: T, value: string) => boolean;
@@ -35,11 +23,7 @@ export type AutocompleteProps<T> = {
     styles: { top?: number; left?: number; minWidth?: number },
   ) => React.ReactElement;
   menuStyle?: React.CSSProperties;
-  renderInput?: (
-    props: React.InputHTMLAttributes<HTMLInputElement> & {
-      ref: (refElement: React.RefObject<HTMLInputElement>) => void;
-    },
-  ) => React.ReactNode;
+  renderInput?: (props: React.InputHTMLAttributes<HTMLInputElement>) => React.ReactNode;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   wrapperProps?: React.InputHTMLAttributes<HTMLDivElement>;
   wrapperStyle?: React.CSSProperties;
@@ -49,6 +33,7 @@ export type AutocompleteProps<T> = {
   onMenuVisibilityChange?: (isOpen: boolean) => void;
   open?: boolean;
   debug?: boolean;
+  inputElementRef?: React.RefObject<ImperativeAPIRef | null>;
 };
 
 export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX.Element {
@@ -60,21 +45,23 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     },
     wrapperProps = {},
     wrapperStyle = {
+      position: 'relative',
       display: 'inline-block',
     },
-    wrapperClassName = '',
+    wrapperClassName = 'ra-border ra-border-solid ra-border-black',
     inputProps = {},
-    renderInput = (args) => {
-      // @ts-ignore
-      return <input {...args} />;
-    },
-    onChange = () => {},
-    onSelect = () => {},
+    renderInput = (props) => <input {...props} />,
+    onChange = () => { },
+    onSelect = () => { },
     isItemSelectable = () => {
       return true;
     },
     renderMenu = (items, _value, style) => {
-      return <div style={{ ...style, ...menuStyle }}>{items}</div>;
+      return (
+        <select id={props.inputProps?.id} style={{ ...style, ...menuStyle }}>
+          {items}
+        </select>
+      );
     },
     menuStyle = {
       borderRadius: '3px',
@@ -84,44 +71,41 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
       fontSize: '90%',
       position: 'fixed',
       overflow: 'auto',
-      maxHeight: '50%', // TODO: don't cheat, let it flow to the bottom
+      maxHeight: '50%',
     },
     autoHighlight = true,
     selectOnBlur = false,
-    onMenuVisibilityChange = () => {},
+    onMenuVisibilityChange = () => { },
     renderItem = (): React.ReactElement => {
       throw new Error('renderItem not implemented.');
     },
+    inputElementRef,
   } = props;
 
-  let inputRef = React.useRef<{ [key: string]: React.RefObject<HTMLElement | HTMLInputElement> }>(
-    {},
-  );
-  const apiRefs = React.useRef<{ [key in ImperativeAPI]?: (...args: any[]) => void }>({});
-
-  const ignoreBlur = React.useRef<boolean>(false);
-  const ignoreFocus = React.useRef<boolean>(false);
-  const scrollOffset = React.useRef<{ x: number; y: number } | null>(null);
-  const scrollTimer = React.useRef<NodeJS.Timeout | null>(null);
-  const debugStates = React.useRef<
+  const inputRef = useRef<InputReference>({});
+  const ignoreBlur = useRef<boolean>(false);
+  const ignoreFocus = useRef<boolean>(false);
+  const scrollOffset = useRef<{ x: number; y: number } | null>(null);
+  const scrollTimer = useRef<NodeJS.Timeout | null>(null);
+  const debugStates = useRef<
     {
       id: number;
       state: any;
     }[]
   >(null);
 
-  const prevIsOpen = React.useRef<boolean>(false);
-  const prevPropsOpen = React.useRef<boolean | undefined>(props.open);
+  const prevIsOpen = useRef<boolean>(false);
+  const prevPropsOpen = useRef<boolean | undefined>(props.open);
 
-  const [isOpen, setIsOpen] = React.useState<boolean>(false);
-  const [highlightedIndex, setHighlightedIndex] = React.useState<number | null>(null);
-  const [menuTop, setMenuTop] = React.useState<number>();
-  const [menuLeft, setMenuLeft] = React.useState<number>();
-  const [menuWidth, setMenuWidth] = React.useState<number>();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const [menuTop, setMenuTop] = useState<number>();
+  const [menuLeft, setMenuLeft] = useState<number>();
+  const [menuWidth, setMenuWidth] = useState<number>();
 
-  const [itemValue, setItemValue] = React.useState<any>();
-  const [valueState, setValueState] = React.useState<any>(value);
-  const [itemState, setItemState] = React.useState<T>();
+  const [itemValue, setItemValue] = useState<any>();
+  const [valueState, setValueState] = useState<any>(value);
+  const [itemState, setItemState] = useState<T>();
 
   const keyDownHandlers: {
     [key: string]: (event: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -130,7 +114,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
       event.preventDefault();
       const items = getFilteredItems();
       if (!items.length) return;
-      let index = highlightedIndex === null ? -1 : highlightedIndex;
+      let index = highlightedIndex ?? -1;
       for (let i = 0; i < items.length; i++) {
         const p = (index + i + 1) % items.length;
         if (isItemSelectable(items[p])) {
@@ -148,7 +132,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
       event.preventDefault();
       const items = getFilteredItems();
       if (!items.length) return;
-      let index = highlightedIndex === null ? items.length : highlightedIndex;
+      let index = highlightedIndex ?? items.length;
       for (let i = 0; i < items.length; i++) {
         const p = (index - (1 + i) + items.length) % items.length;
         if (isItemSelectable(items[p])) {
@@ -201,31 +185,68 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     },
   };
 
-  React.useEffect(() => {
+  useImperativeHandle(inputElementRef, () => {
+    return {
+      blur() {
+        inputRef.current?.input?.current?.blur();
+      },
+      checkValidity() {
+        return !!inputRef.current?.input?.current?.checkValidity();
+      },
+      click() {
+        inputRef.current?.input?.current?.click();
+      },
+      focus() {
+        inputRef.current?.input?.current?.focus();
+      },
+      select() {
+        inputRef.current?.input?.current?.select();
+      },
+      setSelectionRange(
+        start: number | null,
+        end: number | null,
+        direction?: 'none' | 'forward' | 'backward' | undefined,
+      ) {
+        inputRef.current?.input?.current?.setSelectionRange(start, end, direction);
+      },
+      setCustomValidity(error: string) {
+        inputRef.current?.input?.current?.setCustomValidity(error);
+      },
+      setRangeText(replacement: string) {
+        inputRef.current?.input?.current?.setRangeText(replacement);
+      },
+    };
+  }, []);
+
+  const checkIsOpen = useCallback(() => {
+    return 'open' in props ? props.open : isOpen;
+  }, [isOpen, props.open]);
+
+  const highlightItemFromMouse = useCallback((index: number) => {
+    setHighlightedIndex(index);
+  }, []);
+
+  useEffect(() => {
     onSelect(itemValue, itemState);
-    if (
-      inputRef?.current &&
-      inputRef.current.input?.current &&
-      inputRef.current.input?.current instanceof HTMLInputElement
-    ) {
+    if (inputRef.current.input?.current) {
       inputRef.current.input.current.setSelectionRange(value.length, value.length);
     }
   }, [itemState, valueState, itemValue]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (checkIsOpen()) {
       setMenuPositions();
     }
 
-    () => {
-      if (scrollTimer && scrollTimer.current) {
+    return () => {
+      if (scrollTimer?.current) {
         clearTimeout(scrollTimer.current);
         scrollTimer.current = null;
       }
     };
-  }, []);
+  }, [checkIsOpen]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (highlightedIndex !== null) {
       setHighlightedIndex(ensureHighlightedIndex);
     }
@@ -235,7 +256,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     }
   }, [autoHighlight, value, highlightedIndex]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (
       (isOpen && !prevIsOpen.current) ||
       ('open' in props && props.open && !prevPropsOpen.current)
@@ -259,7 +280,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     // Update ref/state with current
     prevIsOpen.current = isOpen;
     prevPropsOpen.current = props.open;
-  }, [isOpen]);
+  }, [isOpen, checkIsOpen]);
 
   function ensureHighlightedIndex(prevState: number | null): number | null {
     if (prevState && prevState >= getFilteredItems().length) {
@@ -270,11 +291,11 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
 
   function maybeAutoCompleteText(prevState: number | null): number | null {
     const { getItemValue } = props;
-    let index: number = prevState === null ? 0 : prevState;
+    let index: number = prevState ?? 0;
     let items = getFilteredItems();
 
-    for (let i = 0; i < items.length; i++) {
-      if (isItemSelectable(items[index])) break;
+    for (const element of items) {
+      if (isItemSelectable(element)) break;
       index = (index + 1) % items.length;
     }
 
@@ -282,7 +303,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
 
     if (value !== '' && matchedItem) {
       const itemValue = getItemValue(matchedItem);
-      const itemValueDoesMatch = itemValue.toLowerCase().indexOf(value.toLowerCase()) === 0;
+      const itemValueDoesMatch = itemValue.toLowerCase().startsWith(value.toLowerCase());
       if (itemValueDoesMatch) {
         return index;
       }
@@ -291,13 +312,9 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     return null;
   }
 
-  function checkIsOpen() {
-    return 'open' in props ? props.open : isOpen;
-  }
-
   function setMenuPositions() {
     const node = inputRef.current.input;
-    if (!node || !node.current) {
+    if (!node?.current) {
       return;
     }
     const rect = node.current?.getBoundingClientRect();
@@ -309,16 +326,6 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     setMenuTop(rect.bottom + marginBottom);
     setMenuLeft(rect.left + marginLeft);
     setMenuWidth(rect.width + marginLeft + marginRight);
-  }
-
-  function exposeAPI(refElement: React.RefObject<HTMLInputElement>) {
-    inputRef.current.input = refElement;
-    IMPERATIVE_API.forEach((ev) => {
-      if (refElement?.current) {
-        const huh = refElement?.current[ev].bind(refElement);
-        apiRefs.current[ev] = huh;
-      }
-    });
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -337,21 +344,17 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     let filteredItems = items;
 
     if (props?.shouldItemRender) {
-      filteredItems = items.filter(
-        (item) => props?.shouldItemRender && props.shouldItemRender(item, value),
-      );
+      filteredItems = items.filter((item) => props.shouldItemRender?.(item, value));
     }
 
     if (props.sortItems) {
-      filteredItems.sort((a, b) => (props.sortItems && props.sortItems(a, b, value)) ?? 0);
+      filteredItems.sort((a, b) => props.sortItems?.(a, b, value) ?? 0);
     }
 
     return filteredItems;
   }
 
-  function highlightItemFromMouse(index: number) {
-    setHighlightedIndex(index);
-  }
+
 
   function selectItemFromMouse(item: T) {
     const value = getItemValue(item);
@@ -386,6 +389,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
       top: menuTop,
       minWidth: menuWidth,
     };
+
     const menu = renderMenu(items, value, style);
     if (!menu) return;
     return React.cloneElement(menu, {
@@ -398,10 +402,10 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
   }
 
   function handleInputBlur(event: React.FocusEvent<HTMLInputElement>) {
-    if (ignoreBlur && ignoreBlur.current) {
+    if (ignoreBlur?.current) {
       ignoreFocus.current = true;
       scrollOffset.current = getScrollOffset();
-      inputRef.current?.input.current?.focus();
+      inputRef.current?.input?.current?.focus();
       return;
     }
     if (selectOnBlur && highlightedIndex) {
@@ -422,7 +426,7 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
   }
 
   function handleInputFocus(event: React.FocusEvent<HTMLInputElement>) {
-    if (ignoreFocus && ignoreFocus.current) {
+    if (ignoreFocus?.current) {
       ignoreFocus.current = false;
       const { x = 0, y = 0 } = scrollOffset.current || {};
       scrollOffset.current = null;
@@ -454,8 +458,8 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
   }
 
   function isInputFocused() {
-    const el = inputRef.current.input.current;
-    return el && el.ownerDocument && el === el.ownerDocument.activeElement;
+    const el = inputRef.current.input?.current;
+    return el?.ownerDocument && el === el.ownerDocument.activeElement;
   }
 
   function handleInputClick() {
@@ -471,9 +475,9 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
   ) {
     return external
       ? (e: T) => {
-          internal(e);
-          external(e);
-        }
+        internal(e);
+        external(e);
+      }
       : internal;
   }
 
@@ -490,20 +494,23 @@ export function Autocomplete<T extends object>(props: AutocompleteProps<T>): JSX
     const open = checkIsOpen();
 
     return (
-      <div className={wrapperClassName} style={{ ...wrapperStyle }} {...wrapperProps}>
+      <div
+        className={wrapperClassName}
+        style={{ ...wrapperStyle }}
+        {...wrapperProps}
+      >
         {renderInput({
           ...inputProps,
-          role: 'combobox',
+          type: 'text',
+          'aria-controls': inputProps?.id,
           'aria-autocomplete': 'list',
-          'aria-expanded': open,
           autoComplete: 'off',
-          ref: exposeAPI,
           onFocus: handleInputFocus,
           onBlur: handleInputBlur,
           onChange: handleChange,
-          onKeyDown: composeEventHandlers(handleKeyDown, inputProps && inputProps.onKeyDown),
-          onClick: composeEventHandlers(handleInputClick, inputProps && inputProps.onClick),
-          value: props.value,
+          onKeyDown: composeEventHandlers(handleKeyDown, inputProps?.onKeyDown),
+          onClick: composeEventHandlers(handleInputClick, inputProps?.onClick),
+          value: props?.value,
         })}
         {open && renderMenuEl()}
         {props.debug && debugStates.current && (

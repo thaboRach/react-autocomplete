@@ -1,22 +1,18 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { USState } from '../types/USState';
-import { Autocomplete, AutocompleteProps } from '../../lib';
+import { USState } from '@lib/types/USState';
+import { Autocomplete, AutocompleteProps } from '@lib/components/Autocomplete';
 import {
   fakeCategorizedRequest,
   fakeRequest,
   getStates,
   matchStateToTerm,
   sortStates,
-} from '../utils';
+} from '@lib/utils';
+import { Container, HeadingOne, Paragraph, Code, Label, InputContainer } from '@src/components';
 import './styles.css';
-import Container from '../components/Container';
-import HeadingOne from '../components/HeadingOne';
-import Paragraph from '../components/Paragraph';
-import Code from '../components/Code';
-import Label from '../components/Label';
-import InputContainer from '../components/InputContainer';
+
 
 const meta: Meta<AutocompleteProps<USState>> = {
   title: 'Components/Autocomplete',
@@ -153,6 +149,70 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+export const Default: Story = {
+  render: (args) => {
+    const [usState, setUSState] = React.useState<string>('');
+
+    return (
+      <Container>
+        <InputContainer>
+          <Label htmlFor='states'>Choose a state from the US</Label>
+          <Autocomplete<USState>
+            {...args}
+            value={usState}
+            onChange={(_event, value) => setUSState(value)}
+            onSelect={(value) => setUSState(value)}
+          />
+        </InputContainer>
+      </Container>
+    );
+  },
+  args: {
+    inputProps: { id: 'states' },
+    items: getStates(),
+    getItemValue: (item) => item.name,
+    renderMenu: (children) => (
+      <ul className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
+        {children}
+      </ul>
+    ),
+    renderItem: (item, isHighlighted) => (
+      <li
+        className={`ra-px-1 ra-py-1 hover:ra-cursor-default  ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
+        key={item.abbr}
+      >
+        {item.name}
+      </li>
+    ),
+    renderInput: (_props) => {
+      return <input {..._props} />;
+    },
+    sortItems: sortStates,
+    isItemSelectable: (_item) => {
+      return true;
+    },
+    menuStyle: {
+      borderRadius: '3px',
+      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+      background: 'rgba(255, 255, 255, 0.9)',
+      padding: '2px 0',
+      fontSize: '90%',
+      position: 'fixed',
+      overflow: 'auto',
+      maxHeight: '50%',
+    },
+    shouldItemRender: matchStateToTerm,
+    onChange: (_event, _value) => { },
+    onMenuVisibilityChange: (_isOpen) => { },
+    onSelect: (_value, _item) => { },
+    autoHighlight: true,
+    selectOnBlur: false,
+    value: '',
+    wrapperProps: {},
+    wrapperStyle: { display: 'inline-block', position: 'relative' },
+  },
+}
+
 export const Basic: Story = {
   render: (args) => {
     const [usState, setUSState] = React.useState<string>('Ma');
@@ -169,7 +229,6 @@ export const Basic: Story = {
           <Autocomplete<USState>
             {...args}
             value={usState}
-            wrapperStyle={{ position: 'relative', display: 'inline-block' }}
             wrapperClassName='ra-border ra-border-solid ra-border-black'
             shouldItemRender={matchStateToTerm}
             sortItems={sortStates}
@@ -211,20 +270,20 @@ export const Basic: Story = {
       overflow: 'auto',
       maxHeight: '50%',
     },
-    onChange: (_event, _value) => {},
-    onMenuVisibilityChange: (_isOpen) => {},
-    onSelect: (_value, _item) => {},
+    onChange: (_event, _value) => { },
+    onMenuVisibilityChange: (_isOpen) => { },
+    onSelect: (_value, _item) => { },
     renderInput: (_props) => {
       // @ts-ignore
       return <input {..._props} />;
     },
     renderMenu: (_items, _value, _style) => {
-      return <div style={{ ..._style }} children={_items} />;
+      return <div style={{ ..._style }}>{_items}</div>;
     },
     selectOnBlur: false,
     value: '',
     wrapperProps: {},
-    wrapperStyle: { display: 'inline-block' },
+    wrapperStyle: { display: 'inline-block', position: 'relative' },
   },
 };
 
@@ -278,12 +337,7 @@ export const ManagedMenuVisibility: Story = {
             {open ? 'Close menu' : 'Open menu'}
           </button>
           <label htmlFor='forceOpen'>
-            <input
-              id='forceOpen'
-              type='checkbox'
-              checked={forceOpen}
-              onChange={() => setForceOpen((prev) => !prev)}
-            />
+            <input id='forceOpen' type='checkbox' checked={forceOpen} onChange={() => setForceOpen((prev) => !prev)} />
             Force menu to stay open
           </label>
         </InputContainer>
@@ -299,6 +353,7 @@ export const ManagedMenuVisibility: Story = {
       <li
         className={`ra-px-1 ra-py-1 hover:ra-cursor-default ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
         key={item.abbr}
+        aria-selected={isHighlighted}
       >
         {item.name}
       </li>
@@ -447,3 +502,68 @@ export const AsyncData: Story = {
     ),
   },
 };
+
+export const DebugMode: Story = {
+  render: (args) => {
+    const [usState, setUSState] = React.useState<string>('');
+
+    return (
+      <Container>
+        <InputContainer>
+          <Label htmlFor='states'>Choose a state from the US</Label>
+          <Autocomplete<USState>
+            {...args}
+            value={usState}
+            onChange={(_event, value) => setUSState(value)}
+            onSelect={(value) => setUSState(value)}
+          />
+        </InputContainer>
+      </Container>
+    );
+  },
+  args: {
+    inputProps: { id: 'states' },
+    items: getStates(),
+    getItemValue: (item) => item.name,
+    renderMenu: (children) => (
+      <ul className='ra-absolute ra-w-full ra-border ra-border-solid ra-border-black'>
+        {children}
+      </ul>
+    ),
+    renderItem: (item, isHighlighted) => (
+      <li
+        className={`ra-px-1 ra-py-1 hover:ra-cursor-default  ${isHighlighted ? 'ra-text-white ra-bg-blue-300' : ''}`}
+        key={item.abbr}
+      >
+        {item.name}
+      </li>
+    ),
+    renderInput: (_props) => {
+      return <input {..._props} />;
+    },
+    sortItems: sortStates,
+    isItemSelectable: (_item) => {
+      return true;
+    },
+    menuStyle: {
+      borderRadius: '3px',
+      boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+      background: 'rgba(255, 255, 255, 0.9)',
+      padding: '2px 0',
+      fontSize: '90%',
+      position: 'fixed',
+      overflow: 'auto',
+      maxHeight: '50%',
+    },
+    shouldItemRender: matchStateToTerm,
+    onChange: (_event, _value) => { },
+    onMenuVisibilityChange: (_isOpen) => { },
+    onSelect: (_value, _item) => { },
+    autoHighlight: true,
+    selectOnBlur: false,
+    debug: true,
+    value: '',
+    wrapperProps: {},
+    wrapperStyle: { display: 'inline-block', position: 'relative' },
+  },
+}

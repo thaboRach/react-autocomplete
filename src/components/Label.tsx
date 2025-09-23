@@ -3,7 +3,7 @@ type Props = {
   children: string;
 };
 
-export default function Label({ htmlFor, children }: Props) {
+export function Label({ htmlFor, children }: Props) {
   return (
     <label className='ra-block ra-mx-2' htmlFor={htmlFor}>
       {children}
